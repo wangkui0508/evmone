@@ -34,16 +34,16 @@ inline bool check_memory(execution_state& state, const uint256& offset, uint64_t
     if (new_size > current_size)
     {
         const auto new_words = num_words(new_size);
-        const auto current_words = static_cast<int64_t>(current_size / 32);
-        const auto new_cost = 3 * new_words + new_words * new_words / 512;
-        const auto current_cost = 3 * current_words + current_words * current_words / 512;
-        const auto cost = new_cost - current_cost;
+        //        const auto current_words = static_cast<int64_t>(current_size / 32);
+        //        const auto new_cost = 3 * new_words + new_words * new_words / 512;
+        //        const auto current_cost = 3 * current_words + current_words * current_words / 512;
+        //        const auto cost = new_cost - current_cost;
 
-        if ((state.gas_left -= cost) < 0)
-        {
-            state.exit(EVMC_OUT_OF_GAS);
-            return false;
-        }
+        //        if ((state.gas_left -= cost) < 0)
+        //        {
+        //            state.exit(EVMC_OUT_OF_GAS);
+        //            return false;
+        //        }
 
         state.memory.resize(static_cast<size_t>(new_words * word_size));
     }
@@ -148,12 +148,12 @@ const instruction* op_exp(const instruction* instr, execution_state& state) noex
     const auto base = state.stack.pop();
     auto& exponent = state.stack.top();
 
-    const auto exponent_significant_bytes =
-        static_cast<int>(intx::count_significant_words<uint8_t>(exponent));
-    const auto exponent_cost = state.rev >= EVMC_SPURIOUS_DRAGON ? 50 : 10;
-    const auto additional_cost = exponent_significant_bytes * exponent_cost;
-    if ((state.gas_left -= additional_cost) < 0)
-        return state.exit(EVMC_OUT_OF_GAS);
+    //    const auto exponent_significant_bytes =
+    //        static_cast<int>(intx::count_significant_words<uint8_t>(exponent));
+    //    const auto exponent_cost = state.rev >= EVMC_SPURIOUS_DRAGON ? 50 : 10;
+    //    const auto additional_cost = exponent_significant_bytes * exponent_cost;
+    //    if ((state.gas_left -= additional_cost) < 0)
+    //        return state.exit(EVMC_OUT_OF_GAS);
 
     exponent = intx::exp(base, exponent);
     return ++instr;
@@ -306,10 +306,10 @@ const instruction* op_sha3(const instruction* instr, execution_state& state) noe
 
     const auto i = static_cast<size_t>(index);
     const auto s = static_cast<size_t>(size);
-    const auto w = num_words(s);
-    const auto cost = w * 6;
-    if ((state.gas_left -= cost) < 0)
-        return state.exit(EVMC_OUT_OF_GAS);
+    //    const auto w = num_words(s);
+    //    const auto cost = w * 6;
+    //    if ((state.gas_left -= cost) < 0)
+    //        return state.exit(EVMC_OUT_OF_GAS);
 
     auto data = s != 0 ? &state.memory[i] : nullptr;
     size = intx::be::load<uint256>(ethash::keccak256(data, s));
@@ -403,9 +403,9 @@ const instruction* op_calldatacopy(const instruction* instr, execution_state& st
     auto s = static_cast<size_t>(size);
     auto copy_size = std::min(s, state.msg->input_size - src);
 
-    const auto copy_cost = num_words(s) * 3;
-    if ((state.gas_left -= copy_cost) < 0)
-        return state.exit(EVMC_OUT_OF_GAS);
+    //    const auto copy_cost = num_words(s) * 3;
+    //    if ((state.gas_left -= copy_cost) < 0)
+    //        return state.exit(EVMC_OUT_OF_GAS);
 
     if (copy_size > 0)
         std::memcpy(&state.memory[dst], &state.msg->input_data[src], copy_size);
@@ -437,9 +437,9 @@ const instruction* op_codecopy(const instruction* instr, execution_state& state)
     auto s = static_cast<size_t>(size);
     auto copy_size = std::min(s, state.code_size - src);
 
-    const auto copy_cost = num_words(s) * 3;
-    if ((state.gas_left -= copy_cost) < 0)
-        return state.exit(EVMC_OUT_OF_GAS);
+    //    const auto copy_cost = num_words(s) * 3;
+    //    if ((state.gas_left -= copy_cost) < 0)
+    //        return state.exit(EVMC_OUT_OF_GAS);
 
     // TODO: Add unit tests for each combination of conditions.
     if (copy_size > 0)
@@ -499,13 +499,13 @@ const instruction* op_sstore(const instruction* instr, execution_state& state) n
     if (state.msg->flags & EVMC_STATIC)
         return state.exit(EVMC_STATIC_MODE_VIOLATION);
 
-    if (state.rev >= EVMC_ISTANBUL)
-    {
-        const auto correction = state.current_block_cost - instr->arg.number;
-        const auto gas_left = state.gas_left + correction;
-        if (gas_left <= 2300)
-            return state.exit(EVMC_OUT_OF_GAS);
-    }
+    //    if (state.rev >= EVMC_ISTANBUL)
+    //    {
+    //        const auto correction = state.current_block_cost - instr->arg.number;
+    //        const auto gas_left = state.gas_left + correction;
+    //        if (gas_left <= 2300)
+    //            return state.exit(EVMC_OUT_OF_GAS);
+    //    }
 
     const auto key = intx::be::store<evmc::bytes32>(state.stack.pop());
     const auto value = intx::be::store<evmc::bytes32>(state.stack.pop());
@@ -619,9 +619,9 @@ const instruction* op_extcodecopy(const instruction* instr, execution_state& sta
     auto src = max_buffer_size < input_index ? max_buffer_size : static_cast<size_t>(input_index);
     auto s = static_cast<size_t>(size);
 
-    const auto copy_cost = num_words(s) * 3;
-    if ((state.gas_left -= copy_cost) < 0)
-        return state.exit(EVMC_OUT_OF_GAS);
+    //    const auto copy_cost = num_words(s) * 3;
+    //    if ((state.gas_left -= copy_cost) < 0)
+    //        return state.exit(EVMC_OUT_OF_GAS);
 
     auto data = s != 0 ? &state.memory[dst] : nullptr;
     auto num_bytes_copied = state.host.copy_code(addr, src, data, s);
@@ -655,9 +655,9 @@ const instruction* op_returndatacopy(const instruction* instr, execution_state& 
     if (src + s > state.return_data.size())
         return state.exit(EVMC_INVALID_MEMORY_ACCESS);
 
-    const auto copy_cost = num_words(s) * 3;
-    if ((state.gas_left -= copy_cost) < 0)
-        return state.exit(EVMC_OUT_OF_GAS);
+    //    const auto copy_cost = num_words(s) * 3;
+    //    if ((state.gas_left -= copy_cost) < 0)
+    //        return state.exit(EVMC_OUT_OF_GAS);
 
     if (s > 0)
         std::memcpy(&state.memory[dst], &state.return_data[src], s);
@@ -768,9 +768,9 @@ const instruction* op_log(
     const auto o = static_cast<size_t>(offset);
     const auto s = static_cast<size_t>(size);
 
-    const auto cost = int64_t(s) * 8;
-    if ((state.gas_left -= cost) < 0)
-        return state.exit(EVMC_OUT_OF_GAS);
+    //    const auto cost = int64_t(s) * 8;
+    //    if ((state.gas_left -= cost) < 0)
+    //        return state.exit(EVMC_OUT_OF_GAS);
 
     auto topics = std::array<evmc::bytes32, 4>{};
     for (size_t i = 0; i < num_topics; ++i)
@@ -1221,8 +1221,8 @@ const instruction* opx_beginblock(const instruction* instr, execution_state& sta
 {
     auto& block = instr->arg.block;
 
-    if ((state.gas_left -= block.gas_cost) < 0)
-        return state.exit(EVMC_OUT_OF_GAS);
+    //    if ((state.gas_left -= block.gas_cost) < 0)
+    //        return state.exit(EVMC_OUT_OF_GAS);
 
     if (static_cast<int>(state.stack.size()) < block.stack_req)
         return state.exit(EVMC_STACK_UNDERFLOW);
