@@ -180,12 +180,15 @@ struct op_table_entry
 
 using op_table = std::array<op_table_entry, 256>;
 
+const int OP_BEGINBLOCK = 300;
+
 struct instruction
 {
     instruction_exec_fn fn = nullptr;
+    int op, pc;
     instruction_argument arg;
 
-    explicit constexpr instruction(instruction_exec_fn f) noexcept : fn{f}, arg{} {};
+    explicit constexpr instruction(instruction_exec_fn f, int op_, int pc_) noexcept : fn{f}, op{op_}, pc{pc_}, arg{} {};
 };
 
 struct code_analysis

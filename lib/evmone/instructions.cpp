@@ -4,6 +4,8 @@
 
 #include "analysis.hpp"
 #include <ethash/keccak.hpp>
+#include <iostream>
+#include <iomanip>
 
 namespace evmone
 {
@@ -708,7 +710,8 @@ const instruction* op_number(const instruction* instr, execution_state& state) n
 
 const instruction* op_difficulty(const instruction* instr, execution_state& state) noexcept
 {
-    state.stack.push(intx::be::load<uint256>(state.host.get_tx_context().block_difficulty));
+    //state.stack.push(intx::be::load<uint256>(state.host.get_tx_context().block_difficulty));
+    state.stack.push(static_cast<uint256>(uint64_t(0x20000)));
     return ++instr;
 }
 
@@ -1107,6 +1110,13 @@ const instruction* op_create(const instruction* instr, execution_state& state) n
     {
         msg.input_data = &state.memory[size_t(init_code_offset)];
         msg.input_size = size_t(init_code_size);
+	std::cerr<<"code size is:"<<msg.input_size<<std::endl;
+	if(msg.input_size < 65536) {
+	    for(size_t i = 0; i < msg.input_size; i++) {
+	        std::cerr<< std::setw(2) << std::setfill('0') <<int(msg.input_data[i])<<" ";
+	        if(i%32==0) std::cerr<<std::endl;
+	    }
+	}
     }
 
     msg.sender = state.msg->destination;
@@ -1114,6 +1124,13 @@ const instruction* op_create(const instruction* instr, execution_state& state) n
     msg.value = intx::be::store<evmc::uint256be>(endowment);
 
     auto result = state.host.call(msg);
+    std::cerr<<"return data size is:"<<result.output_size<<std::endl;
+    if(result.output_size < 65536) {
+        for(size_t i = 0; i < result.output_size; i++) {
+            std::cerr<< std::setw(2) << std::setfill('0') <<int(result.output_data[i])<<" ";
+            if(i%32==0) std::cerr<<std::endl;
+        }
+    }
     state.return_data.assign(result.output_data, result.output_size);
     if (result.status_code == EVMC_SUCCESS)
         state.stack[0] = intx::be::load<uint256>(result.create_address);

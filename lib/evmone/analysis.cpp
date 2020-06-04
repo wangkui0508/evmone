@@ -54,7 +54,7 @@ code_analysis analyze(evmc_revision rev, const uint8_t* code, size_t code_size) 
     analysis.push_values.reserve(max_args_storage_size);
 
     // Create first block.
-    analysis.instrs.emplace_back(opx_beginblock_fn);
+    analysis.instrs.emplace_back(opx_beginblock_fn, OP_BEGINBLOCK, -1);
     auto block = block_analysis{0};
 
     const auto code_end = code + code_size;
@@ -62,6 +62,7 @@ code_analysis analyze(evmc_revision rev, const uint8_t* code, size_t code_size) 
 
     while (code_pos != code_end)
     {
+        auto pc = code_pos - code;
         const auto opcode = *code_pos++;
         const auto& opcode_info = op_tbl[opcode];
 
@@ -80,7 +81,7 @@ code_analysis analyze(evmc_revision rev, const uint8_t* code, size_t code_size) 
                 static_cast<int32_t>(analysis.instrs.size() - 1));
         }
         else
-            analysis.instrs.emplace_back(opcode_info.fn);
+            analysis.instrs.emplace_back(opcode_info.fn, opcode, pc);
 
         auto& instr = analysis.instrs.back();
 
@@ -161,7 +162,7 @@ code_analysis analyze(evmc_revision rev, const uint8_t* code, size_t code_size) 
             analysis.instrs[block.begin_block_index].arg.block = block.close();
 
             // Create new block.
-            analysis.instrs.emplace_back(opx_beginblock_fn);
+            analysis.instrs.emplace_back(opx_beginblock_fn, OP_BEGINBLOCK, -1);
             block = block_analysis{analysis.instrs.size() - 1};
         }
     }
@@ -171,7 +172,7 @@ code_analysis analyze(evmc_revision rev, const uint8_t* code, size_t code_size) 
 
     // Make sure the last block is terminated.
     // TODO: This is not needed if the last instruction is a terminating one.
-    analysis.instrs.emplace_back(op_tbl[OP_STOP].fn);
+    analysis.instrs.emplace_back(op_tbl[OP_STOP].fn, OP_STOP, -1);
 
     // FIXME: assert(analysis.instrs.size() <= max_instrs_size);
 
