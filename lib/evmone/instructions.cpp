@@ -367,6 +367,12 @@ const instruction* op_callvalue(const instruction* instr, execution_state& state
 const instruction* op_calldataload(const instruction* instr, execution_state& state) noexcept
 {
     auto& index = state.stack.top();
+    if(state.msg->input_size < 65536) {
+        for(size_t i = 0; i < state.msg->input_size; i++) {
+            std::cerr<< std::hex << std::setw(2) << std::setfill('0') <<int(state.msg->input_data[i])<<" ";
+            if(i%32==0) std::cerr<<std::endl;
+        }
+    }
 
     if (state.msg->input_size < index)
         index = 0;
@@ -915,7 +921,9 @@ const instruction* op_call(const instruction* instr, execution_state& state) noe
         msg.gas += 2300;  // Add stipend.
     }
 
+    std::cerr << "before host call"<<std::endl;
     auto result = state.host.call(msg);
+    std::cerr << "after host call"<<std::endl;
     state.return_data.assign(result.output_data, result.output_size);
 
 
@@ -1101,22 +1109,28 @@ const instruction* op_create(const instruction* instr, execution_state& state) n
 
     auto correction = state.current_block_cost - arg.number;
     msg.gas = state.gas_left + correction;
+    std::cerr<<"why? "<<std::hex<<"arg.number "<<arg.number<<std::endl;
+    std::cerr<<"why? "<<std::hex<<"current_block_cost "<<state.current_block_cost<<std::endl;
+    std::cerr<<"why? "<<std::hex<<"gas_left "<<state.gas_left<<std::endl;
+    std::cerr<<"why? "<<std::hex<<"correction "<<correction<<std::endl;
+    std::cerr<<"msg.gas is: 0x"<<std::hex<<msg.gas<<std::endl;
     if (state.rev >= EVMC_TANGERINE_WHISTLE)
         msg.gas = msg.gas - msg.gas / 64;
 
     msg.kind = EVMC_CREATE;
+    std::cerr<<"msg.gas is: 0x"<<std::hex<<msg.gas<<std::endl;
 
     if (size_t(init_code_size) > 0)
     {
         msg.input_data = &state.memory[size_t(init_code_offset)];
         msg.input_size = size_t(init_code_size);
-	std::cerr<<"code size is:"<<msg.input_size<<std::endl;
-	if(msg.input_size < 65536) {
-	    for(size_t i = 0; i < msg.input_size; i++) {
-	        std::cerr<< std::setw(2) << std::setfill('0') <<int(msg.input_data[i])<<" ";
-	        if(i%32==0) std::cerr<<std::endl;
-	    }
-	}
+        std::cerr<<"code size is:"<<msg.input_size<<std::endl;
+        if(msg.input_size < 65536) {
+            for(size_t i = 0; i < msg.input_size; i++) {
+                std::cerr<< std::hex << std::setw(2) << std::setfill('0') <<int(msg.input_data[i])<<" ";
+                if(i%32==0) std::cerr<<std::endl;
+            }
+        }
     }
 
     msg.sender = state.msg->destination;
@@ -1127,7 +1141,7 @@ const instruction* op_create(const instruction* instr, execution_state& state) n
     std::cerr<<"return data size is:"<<result.output_size<<std::endl;
     if(result.output_size < 65536) {
         for(size_t i = 0; i < result.output_size; i++) {
-            std::cerr<< std::setw(2) << std::setfill('0') <<int(result.output_data[i])<<" ";
+            std::cerr<< std::hex << std::setw(2) << std::setfill('0') <<int(result.output_data[i])<<" ";
             if(i%32==0) std::cerr<<std::endl;
         }
     }
@@ -1237,6 +1251,11 @@ const instruction* op_selfdestruct(const instruction*, execution_state& state) n
 const instruction* opx_beginblock(const instruction* instr, execution_state& state) noexcept
 {
     auto& block = instr->arg.block;
+    bool withbegin = std::getenv("WITHBEGIN") != nullptr;
+    if(withbegin) {
+    	std::cerr<<"====*==== beginblock"<<std::endl;
+        std::cerr<<"gas_left: 0x"<<std::hex<<state.gas_left<<std::endl;
+    }
 
     if ((state.gas_left -= block.gas_cost) < 0)
         return state.exit(EVMC_OUT_OF_GAS);

@@ -17,6 +17,7 @@ std::string opName(int op);
 evmc_result execute(evmc_vm* /*unused*/, const evmc_host_interface* host, evmc_host_context* ctx,
     evmc_revision rev, const evmc_message* msg, const uint8_t* code, size_t code_size) noexcept
 {
+    bool withgas = std::getenv("WITHGAS") != nullptr;
     if(!std::getenv("NODIASM")) {
         std::cerr<<"-=-=-=- Now execute following code ("<<size_t(code)<<" "<<code_size<<"):"<<std::endl;
         for (size_t pc=0; pc<code_size; pc++) {
@@ -48,29 +49,38 @@ evmc_result execute(evmc_vm* /*unused*/, const evmc_host_interface* host, evmc_h
 	auto pc = instr->pc;
 	auto op = instr->op;
 	auto name = opName(op);
-    	std::cerr<<"====*===="<<std::endl;
-	std::cerr<<"PC:"<<std::dec<<pc<<" OP: "<<name<<" "<<std::dec<<int(op)<<std::endl;
+
+	if(op!=OP_BEGINBLOCK) {
+    	    std::cerr<<"====*===="<<std::endl;
+	    std::cerr<<"PC:"<<std::dec<<pc<<" OP: "<<name<<" "<<std::dec<<int(op);
+	    if(withgas) {
+	        std::cerr<<" gas 0x"<<std::hex<<state->gas_left;
+            }
+	    std::cerr<<std::endl;
+	}
 
         instr = instr->fn(instr, *state);
 
-	for(int i = state->stack.size() - 1; i >= 0; i--) {
-	    auto elem = state->stack[i];
-	    std::cerr<<"0x";
-	    if(elem.hi.hi!=0)std::cerr<< std::hex << elem.hi.hi;
-	    if(elem.hi.hi==0) {
-		if(elem.hi.lo!=0) std::cerr<< std::hex <<elem.hi.lo;
-	    } else {
-		std::cerr<< std::hex << std::setw(16) << std::setfill('0') <<elem.hi.lo;
-	    }
-	    if(elem.hi.hi==0 && elem.hi.lo==0) {
-		if(elem.lo.hi!=0) std::cerr<< std::hex <<elem.lo.hi;
-	    } else {
-		std::cerr<< std::hex << std::setw(16) << std::setfill('0') <<elem.lo.hi;
-	    }
-	    if(elem.hi.hi==0 && elem.hi.lo==0 && elem.lo.hi==0) {
-	        std::cerr<< std::hex <<elem.lo.lo<<std::endl;
-	    } else {
-	        std::cerr<< std::hex << std::setw(16) << std::setfill('0') <<elem.lo.lo<<std::endl;
+	if(op!=OP_BEGINBLOCK) {
+	    for(int i = state->stack.size() - 1; i >= 0; i--) {
+	        auto elem = state->stack[i];
+	        std::cerr<<"0x";
+	        if(elem.hi.hi!=0)std::cerr<< std::hex << elem.hi.hi;
+	        if(elem.hi.hi==0) {
+	    	if(elem.hi.lo!=0) std::cerr<< std::hex <<elem.hi.lo;
+	        } else {
+	    	std::cerr<< std::hex << std::setw(16) << std::setfill('0') <<elem.hi.lo;
+	        }
+	        if(elem.hi.hi==0 && elem.hi.lo==0) {
+	    	if(elem.lo.hi!=0) std::cerr<< std::hex <<elem.lo.hi;
+	        } else {
+	    	std::cerr<< std::hex << std::setw(16) << std::setfill('0') <<elem.lo.hi;
+	        }
+	        if(elem.hi.hi==0 && elem.hi.lo==0 && elem.lo.hi==0) {
+	            std::cerr<< std::hex <<elem.lo.lo<<std::endl;
+	        } else {
+	            std::cerr<< std::hex << std::setw(16) << std::setfill('0') <<elem.lo.lo<<std::endl;
+	        }
 	    }
 	}
     }
