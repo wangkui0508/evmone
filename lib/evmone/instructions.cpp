@@ -1109,16 +1109,16 @@ const instruction* op_create(const instruction* instr, execution_state& state) n
 
     auto correction = state.current_block_cost - arg.number;
     msg.gas = state.gas_left + correction;
-    std::cerr<<"why? "<<std::hex<<"arg.number "<<arg.number<<std::endl;
-    std::cerr<<"why? "<<std::hex<<"current_block_cost "<<state.current_block_cost<<std::endl;
-    std::cerr<<"why? "<<std::hex<<"gas_left "<<state.gas_left<<std::endl;
-    std::cerr<<"why? "<<std::hex<<"correction "<<correction<<std::endl;
-    std::cerr<<"msg.gas is: 0x"<<std::hex<<msg.gas<<std::endl;
+    //std::cerr<<"why? "<<std::hex<<"arg.number "<<arg.number<<std::endl;
+    //std::cerr<<"why? "<<std::hex<<"current_block_cost "<<state.current_block_cost<<std::endl;
+    //std::cerr<<"why? "<<std::hex<<"gas_left "<<state.gas_left<<std::endl;
+    //std::cerr<<"why? "<<std::hex<<"correction "<<correction<<std::endl;
+    //std::cerr<<"msg.gas is: 0x"<<std::hex<<msg.gas<<std::endl;
     if (state.rev >= EVMC_TANGERINE_WHISTLE)
         msg.gas = msg.gas - msg.gas / 64;
 
     msg.kind = EVMC_CREATE;
-    std::cerr<<"msg.gas is: 0x"<<std::hex<<msg.gas<<std::endl;
+    //std::cerr<<"msg.gas is: 0x"<<std::hex<<msg.gas<<std::endl;
 
     if (size_t(init_code_size) > 0)
     {
